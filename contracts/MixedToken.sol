@@ -3,19 +3,15 @@ pragma solidity >=0.4.22 <0.9.0;
 
 import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../node_modules/@openzeppelin/contracts/utils/Strings.sol";
+
+struct IndexedTokenStruct {
+    address token;
+    uint256 amount;
+}
 
 contract MixedToken is ERC20, Ownable {
     mapping(address => uint256) private _indexedTokensFunds;
     address[] private _indexedTokens;
-
-    function concatString(string memory _text, string memory _newPart)
-        private
-        pure
-        returns (string memory)
-    {
-        return string(abi.encodePacked(_text, _newPart));
-    }
 
     function decimals() public view virtual override returns (uint8) {
         return 0;
@@ -42,44 +38,28 @@ contract MixedToken is ERC20, Ownable {
         );
     }
 
-    function getIndexedTokens() public view returns (string memory) {
-        require(_indexedTokens.length > 0, "No tokens indexed");
-        string memory tokensSerialized = "{";
-        for (uint256 i = 0; i < _indexedTokens.length; i++) {
-            tokensSerialized = concatString(
-                tokensSerialized,
-                string(new bytes(10))
-            );
-            tokensSerialized = concatString(
-                tokensSerialized,
-                Strings.toHexString(uint256(uint160(_indexedTokens[i])), 20)
-            );
-            tokensSerialized = concatString(
-                tokensSerialized,
-                string(new bytes(10))
-            );
+    function getIndexedTokensFunds()
+        public
+        view
+        returns (IndexedTokenStruct[] memory)
+    {
+        uint256 size = _indexedTokens.length;
+        require(size > 0, "No tokens indexed");
+        IndexedTokenStruct[] memory indexTokensArray = new IndexedTokenStruct[](
+            size
+        );
 
-            tokensSerialized = concatString(tokensSerialized, ":");
-            tokensSerialized = concatString(
-                tokensSerialized,
-                string(new bytes(10))
+        for (uint256 i = 0; i < size; i++) {
+            IndexedTokenStruct memory indexTokens = IndexedTokenStruct(
+                _indexedTokens[i],
+                _indexedTokensFunds[_indexedTokens[i]]
             );
-
-            tokensSerialized = concatString(
-                tokensSerialized,
-                Strings.toString(_indexedTokensFunds[_indexedTokens[i]])
-            );
-            tokensSerialized = concatString(
-                tokensSerialized,
-                string(new bytes(10))
-            );
-
-            if (i == _indexedTokens.length - 1) {
-                tokensSerialized = concatString(tokensSerialized, "} ");
-            } else {
-                tokensSerialized = concatString(tokensSerialized, ", ");
-            }
+            indexTokensArray[i] = indexTokens;
         }
-        return tokensSerialized;
+        return indexTokensArray;
+    }
+
+    function getIndexedTokens() public view returns (address[] memory) {
+        return _indexedTokens;
     }
 }
